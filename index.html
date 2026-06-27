@@ -802,7 +802,7 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
   <div class="lb-grid" id="leaderboard"></div>
 
   <!-- Groups -->
-  <div class="section-title">👥 Tất cả 16 nhóm</div>
+  <div class="section-title">👥 Tất cả 7 nhóm</div>
   <div class="groups-grid" id="groups-grid"></div>
 </div>
 
@@ -850,7 +850,7 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
 <!-- ======================== PAGE: ADMIN ======================== -->
 <div class="page" id="page-admin">
   <h2>⚙️ Quản lý thành viên nhóm</h2>
-  <p class="sub">Nhập tên thành viên cho 16 nhóm. Mỗi nhóm gồm 1 PT và 1 KH.</p>
+  <p class="sub">Nhập tên thành viên cho 7 nhóm. Mỗi nhóm gồm 2 thành viên, vai trò sẽ được trộn ngẫu nhiên.</p>
   <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="saveAllMembers()">💾 Lưu tất cả</button>
     <button class="btn btn-secondary" onclick="resetAll()">🗑 Reset dữ liệu</button>
@@ -919,7 +919,7 @@ const TECHNIQUES = [
   }
 ];
 
-const NUM_GROUPS = 16;
+const NUM_GROUPS = 7;
 let groups = [];
 let spinHistory = [];
 let currentTech = null;
@@ -930,8 +930,24 @@ let currentTech = null;
 async function loadGroups() {
   try {
     const r = await window.storage.get('groups-data');
-    if (r) groups = JSON.parse(r.value);
-    else initGroups();
+    if (r) {
+      const saved = JSON.parse(r.value);
+      // Migrate: nếu số nhóm khác NUM_GROUPS thì rebuild
+      if (saved.length !== NUM_GROUPS) {
+        // Giữ lại data các nhóm cũ nếu còn trong range
+        groups = Array.from({length: NUM_GROUPS}, (_, i) => {
+          const old = saved.find(g => g.id === i + 1);
+          return old ? {...old, id: i + 1} : {
+            id: i + 1, member1: '', member2: '', ptName: '', khName: '', uploads: []
+          };
+        });
+        await saveGroups();
+      } else {
+        groups = saved;
+      }
+    } else {
+      initGroups();
+    }
   } catch { initGroups(); }
 }
 
