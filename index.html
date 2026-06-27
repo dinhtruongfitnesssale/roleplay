@@ -1150,41 +1150,95 @@ function initGroups() {
 const LS_KEY   = 'dtroleplay';
 const GS_URL_KEY = 'dtroleplay-gsurl';
 
-let gsUrl = localStorage.getItem(GS_URL_KEY) || '';
+// ← URL hardcode — mọi thiết bị tự động kết nối, không cần nhập tay
+const GS_DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbwVcm-V19VtaF44rfjK0HCl9-30AAF-FXU0QDteZiGjTlEDY35tJRinBGBYrJFOf-ptYw/exec';
+
+let gsUrl = localStorage.getItem(GS_URL_KEY) || GS_DEFAULT_URL;
 let syncTimer = null;
 
-// GAS code người dùng cần dán
 const GAS_CODE = `const SHEET_NAME = 'RoleplayData';
+const FOLDER_NAME = 'SalesRoleplay_Audio';
 
+// ── GET: đọc data nhóm ──
 function doGet(e) {
-  const sheet = getSheet();
-  const data = sheet.getRange('A1').getValue();
-  const output = ContentService.createTextOutput(e.parameter.callback + '(' + (data || '[]') + ')')
-    .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  return output;
+  const action = e.parameter.action || 'getData';
+  
+  if (action === 'getData') {
+    const sheet = getSheet();
+    const data = sheet.getRange('A1').getValue();
+    const cb = e.parameter.callback || 'cb';
+    return ContentService
+      .createTextOutput(cb + '(' + (data || '[]') + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
 }
 
+// ── POST: lưu data nhóm HOẶC upload file ──
 function doPost(e) {
-  const sheet = getSheet();
-  sheet.getRange('A1').setValue(e.postData.contents);
+  const action = e.parameter.action || 'saveData';
   const cb = e.parameter.callback || 'cb';
-  return ContentService.createTextOutput(cb + '("ok")')
-    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+
+  if (action === 'saveData') {
+    getSheet().getRange('A1').setValue(e.postData.contents);
+    return ContentService
+      .createTextOutput(cb + '("ok")')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  if (action === 'uploadAudio') {
+    try {
+      const params = JSON.parse(e.postData.contents);
+      const folder = getDriveFolder();
+      const blob = Utilities.newBlob(
+        Utilities.base64Decode(params.data),
+        params.mimeType,
+        params.name
+      );
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      const result = JSON.stringify({ 
+        ok: true, 
+        fileId: file.getId(),
+        url: 'https://drive.google.com/file/d/' + file.getId() + '/view',
+        directUrl: 'https://drive.google.com/uc?export=download&id=' + file.getId()
+      });
+      return ContentService
+        .createTextOutput(cb + '(' + result + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } catch(err) {
+      const result = JSON.stringify({ ok: false, error: err.message });
+      return ContentService
+        .createTextOutput(cb + '(' + result + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+  }
 }
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   return ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
+}
+
+function getDriveFolder() {
+  const folders = DriveApp.getFoldersByName(FOLDER_NAME);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(FOLDER_NAME);
 }`;
 
 function initGsUI() {
   const ta = document.getElementById('gas-code');
   if (ta) ta.value = GAS_CODE;
 
+  // Hiển thị URL (hardcode hoặc đã lưu)
+  const urlInput = document.getElementById('gs-url');
+  if (urlInput) urlInput.value = gsUrl;
+
   if (gsUrl) {
-    document.getElementById('gs-url').value = gsUrl;
-    updateSyncStatus('loading', '⏳ Đang kiểm tra kết nối...');
-    gsLoad().then(() => {}).catch(() => updateSyncStatus('err', '❌ Không kết nối được'));
+    updateSyncStatus('loading', '⏳ Đang tải dữ liệu...');
+    gsLoad()
+      .then(() => {
+        document.getElementById('gs-setup-box')?.classList.add('connected');
+      })
+      .catch(() => updateSyncStatus('err', '❌ Không kết nối được — dùng data local'));
   }
 }
 
@@ -1511,9 +1565,10 @@ function renderGroupsGrid() {
         ${g.uploads.length === 0 ? '<div class="empty-state" style="padding:10px">Chưa có bản ghi</div>' :
           g.uploads.map((u, ui) => `
             <div class="upload-item">
-              <span class="upload-item-icon">✅</span>
+              <span class="upload-item-icon">${u.driveUrl ? '🎵' : '✅'}</span>
               <span class="upload-item-name" title="${u.name}">${u.name}</span>
               <span class="upload-item-date">${u.date}</span>
+              ${u.driveUrl ? `<a href="${u.driveUrl}" target="_blank" style="color:var(--navy-light);font-size:18px;text-decoration:none;flex-shrink:0" title="Nghe lại">▶</a>` : ''}
               <span class="upload-item-del" onclick="deleteUpload(${g.id}, ${ui})" title="Xoá">×</span>
             </div>
           `).join('')}
@@ -1548,15 +1603,100 @@ function handleUpload(gid, inp) {
   const g = groups.find(x => x.id === gid);
   if (!g) return;
 
-  const now = new Date();
-  const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
-  g.uploads.push({ name: file.name, date: dateStr, ts: Date.now() });
+  // Hiện trạng thái đang upload
+  showToast('⏳ Đang upload "' + file.name + '"...');
 
-  saveGroups();
-  renderHome();
-  buildUploadInputs();
-  showToast(`✅ Nhóm ${gid} đã upload: ${file.name}`);
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64 = e.target.result.split(',')[1];
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+
+    if (gsUrl) {
+      // Upload lên Google Drive qua Apps Script
+      try {
+        const result = await jsonpPost_upload(gsUrl, {
+          action: 'uploadAudio',
+          name: file.name,
+          mimeType: file.type || 'audio/mpeg',
+          data: base64
+        });
+
+        if (result && result.ok) {
+          g.uploads.push({
+            name: file.name,
+            date: dateStr,
+            ts: Date.now(),
+            driveUrl: result.url,
+            driveId: result.fileId
+          });
+          await saveGroups();
+          renderHome();
+          buildUploadInputs();
+          showToast('✅ Upload thành công! File đã lưu vào Google Drive.');
+        } else {
+          throw new Error(result?.error || 'Unknown error');
+        }
+      } catch(err) {
+        // Fallback: lưu local nếu Drive lỗi
+        g.uploads.push({ name: file.name, date: dateStr, ts: Date.now() });
+        await saveGroups();
+        renderHome();
+        buildUploadInputs();
+        showToast('⚠️ Drive lỗi, lưu local: ' + err.message);
+      }
+    } else {
+      // Không có GAS URL → lưu local
+      g.uploads.push({ name: file.name, date: dateStr, ts: Date.now() });
+      await saveGroups();
+      renderHome();
+      buildUploadInputs();
+      showToast('✅ Nhóm ' + gid + ' đã ghi nhận: ' + file.name);
+    }
+  };
+  reader.readAsDataURL(file);
   inp.value = '';
+}
+
+// JSONP POST cho upload file (gửi JSON qua fetch no-cors, nhận kết quả qua JSONP GET)
+function jsonpPost_upload(url, payload) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'gs_upload_' + Date.now();
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      reject(new Error('Upload timeout (file quá lớn?)'));
+    }, 60000); // 60s cho file lớn
+
+    window[cbName] = (result) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      resolve(result);
+    };
+
+    // Gửi data qua fetch no-cors (GAS nhận được)
+    // Đồng thời poll kết quả qua JSONP
+    fetch(url + '?action=uploadAudio&callback=' + cbName, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' }
+    }).catch(() => {});
+
+    // Script tag để nhận callback từ GAS response
+    const script = document.createElement('script');
+    script.src = url + '?action=uploadAudio&callback=' + cbName;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Script load error'));
+    };
+
+    // Delay nhỏ để GAS xử lý POST trước
+    setTimeout(() => {
+      document.head.appendChild(script);
+    }, 2000);
+  });
 }
 
 function deleteUpload(gid, idx) {
