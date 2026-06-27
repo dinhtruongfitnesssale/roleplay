@@ -1159,30 +1159,22 @@ let syncTimer = null;
 const GAS_CODE = `const SHEET_NAME = 'RoleplayData';
 const FOLDER_NAME = 'SalesRoleplay_Audio';
 
-// ── GET: đọc data nhóm ──
 function doGet(e) {
-  const action = e.parameter.action || 'getData';
+  const sheet = getSheet();
+  const data = sheet.getRange('A1').getValue() || '[]';
   
-  if (action === 'getData') {
-    const sheet = getSheet();
-    const data = sheet.getRange('A1').getValue();
-    const cb = e.parameter.callback || 'cb';
-    return ContentService
-      .createTextOutput(cb + '(' + (data || '[]') + ')')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
+  // Trả về với CORS header đầy đủ
+  return HtmlService.createHtmlOutput(data)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// ── POST: lưu data nhóm HOẶC upload file ──
 function doPost(e) {
   const action = e.parameter.action || 'saveData';
-  const cb = e.parameter.callback || 'cb';
 
   if (action === 'saveData') {
     getSheet().getRange('A1').setValue(e.postData.contents);
-    return ContentService
-      .createTextOutput(cb + '("ok")')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    return HtmlService.createHtmlOutput(JSON.stringify({ok: true}))
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
   if (action === 'uploadAudio') {
@@ -1196,20 +1188,14 @@ function doPost(e) {
       );
       const file = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      const result = JSON.stringify({ 
-        ok: true, 
+      return HtmlService.createHtmlOutput(JSON.stringify({
+        ok: true,
         fileId: file.getId(),
-        url: 'https://drive.google.com/file/d/' + file.getId() + '/view',
-        directUrl: 'https://drive.google.com/uc?export=download&id=' + file.getId()
-      });
-      return ContentService
-        .createTextOutput(cb + '(' + result + ')')
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+        url: 'https://drive.google.com/file/d/' + file.getId() + '/view'
+      })).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     } catch(err) {
-      const result = JSON.stringify({ ok: false, error: err.message });
-      return ContentService
-        .createTextOutput(cb + '(' + result + ')')
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return HtmlService.createHtmlOutput(JSON.stringify({ok: false, error: err.message}))
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
   }
 }
@@ -1242,94 +1228,21 @@ function initGsUI() {
   }
 }
 
-// JSONP helper — tránh CORS hoàn toàn
-function jsonpFetch(url) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'gs_cb_' + Date.now();
-    const script = document.createElement('script');
-    const timeout = setTimeout(() => {
-      delete window[cbName];
-      script.remove();
-      reject(new Error('Timeout'));
-    }, 10000);
-
-    window[cbName] = (data) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      resolve(data);
-    };
-
-    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      reject(new Error('Script load error'));
-    };
-    document.head.appendChild(script);
-  });
+// ── Fetch helpers dùng fetch thẳng, GAS trả HtmlService với CORS ──
+async function gsGet(url) {
+  const res = await fetch(url, { method: 'GET' });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
 }
 
-function jsonpPost(url, data) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'gs_post_' + Date.now();
-    const script = document.createElement('script');
-    const timeout = setTimeout(() => {
-      delete window[cbName];
-      script.remove();
-      reject(new Error('Timeout'));
-    }, 10000);
-
-    window[cbName] = (result) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      resolve(result);
-    };
-
-    // Dùng form POST qua hidden iframe để gửi data
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url + '?callback=' + cbName;
-    form.target = 'gs_iframe_' + cbName;
-    form.style.display = 'none';
-
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'data';
-    input.value = data;
-    form.appendChild(input);
-
-    const iframe = document.createElement('iframe');
-    iframe.name = 'gs_iframe_' + cbName;
-    iframe.style.display = 'none';
-
-    document.body.appendChild(form);
-    document.body.appendChild(iframe);
-
-    iframe.onload = () => {
-      // POST thành công, cleanup
-      setTimeout(() => {
-        form.remove();
-        iframe.remove();
-        clearTimeout(timeout);
-        delete window[cbName];
-        resolve('ok');
-      }, 500);
-    };
-
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      form.remove();
-      iframe.remove();
-      reject(new Error('Post error'));
-    };
-
-    document.head.appendChild(script);
-    form.submit();
+async function gsPost(url, body, action) {
+  const res = await fetch(url + '?action=' + (action || 'saveData'), {
+    method: 'POST',
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
   });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
 }
 
 function toggleGsSteps() {
@@ -1347,60 +1260,46 @@ function copyGasCode() {
 async function gsConnect() {
   const url = document.getElementById('gs-url').value.trim();
   if (!url.startsWith('https://script.google.com')) {
-    showToast('❌ URL không hợp lệ. Phải bắt đầu bằng https://script.google.com');
+    showToast('❌ URL không hợp lệ');
     return;
   }
   gsUrl = url;
   localStorage.setItem(GS_URL_KEY, gsUrl);
   updateSyncStatus('loading', '⏳ Đang kết nối...');
   try {
-    // Test GET trước
-    await jsonpFetch(gsUrl);
-    // Nếu GET ok → push data hiện tại lên
+    await gsLoad();
     await gsSave();
-    updateSyncStatus('ok', '✅ Đã kết nối Google Sheets');
-    showToast('✅ Kết nối thành công! Data sẽ đồng bộ tự động.');
-    document.getElementById('gs-setup-box').classList.add('connected');
+    document.getElementById('gs-setup-box')?.classList.add('connected');
+    showToast('✅ Kết nối thành công!');
   } catch(e) {
     updateSyncStatus('err', '❌ ' + e.message);
-    showToast('❌ Lỗi kết nối: ' + e.message);
+    showToast('❌ Lỗi: ' + e.message);
   }
 }
 
 async function gsLoad() {
   if (!gsUrl) return;
-  const data = await jsonpFetch(gsUrl);
-  if (Array.isArray(data) && data.length > 0) {
-    const saved = data;
+  const data = await gsGet(gsUrl);
+  const saved = Array.isArray(data) ? data : (typeof data === 'string' ? JSON.parse(data) : null);
+  if (saved && Array.isArray(saved) && saved.length > 0) {
     groups = saved.length !== NUM_GROUPS
-      ? Array.from({length: NUM_GROUPS}, (_, i) => saved.find(g => g.id === i+1) || {id:i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]})
+      ? Array.from({length: NUM_GROUPS}, (_, i) =>
+          saved.find(g => g.id === i+1) || {id:i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]})
       : saved;
     localStorage.setItem(LS_KEY, JSON.stringify(groups));
     renderHome();
-    renderAdmin();
+    if (document.getElementById('page-admin').classList.contains('active')) renderAdmin();
     updateSyncStatus('ok', '✅ Đồng bộ lúc ' + timeNow());
   } else {
-    // Sheet trống — push data local lên
-    updateSyncStatus('ok', '✅ Kết nối thành công (sheet trống)');
+    updateSyncStatus('ok', '✅ Kết nối OK (chưa có data)');
   }
 }
 
 async function gsSave() {
   if (!gsUrl) return;
-  // Dùng fetch với no-cors để POST — GAS nhận được dù không trả về response
-  try {
-    await fetch(gsUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(groups),
-      headers: { 'Content-Type': 'text/plain' }
-    });
-    localStorage.setItem(LS_KEY, JSON.stringify(groups));
-    updateSyncStatus('ok', '✅ Đã lưu lúc ' + timeNow());
-  } catch(e) {
-    // no-cors thường không throw, nếu throw thì báo lỗi
-    throw e;
-  }
+  await gsPost(gsUrl, JSON.stringify(groups), 'saveData');
+  localStorage.setItem(LS_KEY, JSON.stringify(groups));
+  updateSyncStatus('ok', '✅ Đã lưu lúc ' + timeNow());
 }
 
 function updateSyncStatus(state, msg) {
@@ -1615,12 +1514,11 @@ function handleUpload(gid, inp) {
     if (gsUrl) {
       // Upload lên Google Drive qua Apps Script
       try {
-        const result = await jsonpPost_upload(gsUrl, {
-          action: 'uploadAudio',
+        const result = await gsPost(gsUrl, {
           name: file.name,
           mimeType: file.type || 'audio/mpeg',
           data: base64
-        });
+        }, 'uploadAudio');
 
         if (result && result.ok) {
           g.uploads.push({
@@ -1658,46 +1556,7 @@ function handleUpload(gid, inp) {
   inp.value = '';
 }
 
-// JSONP POST cho upload file (gửi JSON qua fetch no-cors, nhận kết quả qua JSONP GET)
-function jsonpPost_upload(url, payload) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'gs_upload_' + Date.now();
-    const timeout = setTimeout(() => {
-      delete window[cbName];
-      reject(new Error('Upload timeout (file quá lớn?)'));
-    }, 60000); // 60s cho file lớn
 
-    window[cbName] = (result) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      resolve(result);
-    };
-
-    // Gửi data qua fetch no-cors (GAS nhận được)
-    // Đồng thời poll kết quả qua JSONP
-    fetch(url + '?action=uploadAudio&callback=' + cbName, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'text/plain' }
-    }).catch(() => {});
-
-    // Script tag để nhận callback từ GAS response
-    const script = document.createElement('script');
-    script.src = url + '?action=uploadAudio&callback=' + cbName;
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      reject(new Error('Script load error'));
-    };
-
-    // Delay nhỏ để GAS xử lý POST trước
-    setTimeout(() => {
-      document.head.appendChild(script);
-    }, 2000);
-  });
-}
 
 function deleteUpload(gid, idx) {
   if (!confirm('Xoá bản ghi này?')) return;
