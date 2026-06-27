@@ -513,6 +513,16 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
+}
+
 /* upload input hidden */
 .upload-input { display: none; }
 
@@ -828,9 +838,6 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
         <button class="btn btn-gold" onclick="spinTechnique()" style="font-size:14px;padding:12px 28px">
           🎲 Rút ngẫu nhiên
         </button>
-        <button class="btn btn-secondary" onclick="spinAll()" title="Rút khác">
-          🔄 Rút lại
-        </button>
       </div>
 
       <div class="practice-box" id="practice-box">
@@ -843,6 +850,11 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
     <div class="history-log" id="spin-history" style="display:none">
       <div class="section-title" style="margin-bottom:10px">Lịch sử rút hôm nay</div>
       <div id="history-list"></div>
+      <div class="history-pagination" id="history-pagination" style="display:none">
+        <button class="btn btn-secondary btn-sm" onclick="historyPage(-1)" id="hist-prev">← Trước</button>
+        <span id="hist-page-label" style="font-size:12px;color:var(--gray-500);font-weight:600"></span>
+        <button class="btn btn-secondary btn-sm" onclick="historyPage(1)" id="hist-next">Sau →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -923,6 +935,24 @@ const NUM_GROUPS = 7;
 let groups = [];
 let spinHistory = [];
 let currentTech = null;
+let histCurrentPage = 0;
+const HIST_PER_PAGE = 3;
+
+// Deck shuffle: xáo bài 6 kỹ thuật, rút lần lượt không trùng
+// Khi hết deck thì xáo lại vòng mới
+let deck = [];
+let deckUsed = [];
+
+function shuffleDeck() {
+  // Fisher-Yates shuffle
+  const arr = [...TECHNIQUES];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  deck = arr;
+  deckUsed = [];
+}
 
 // ═══════════════════════════════════════
 //   STORAGE HELPERS
@@ -1144,22 +1174,24 @@ function renderSpinGroupSelect() {
 }
 
 function spinTechnique() {
-  const idx = Math.floor(Math.random() * TECHNIQUES.length);
-  showTechnique(TECHNIQUES[idx]);
-}
+  // Nếu deck rỗng hoặc chưa khởi tạo thì xáo mới
+  if (deck.length === 0) shuffleDeck();
 
-function spinAll() {
-  if (!currentTech) { spinTechnique(); return; }
-  const remaining = TECHNIQUES.filter(t => t.num !== currentTech.num);
-  const pick = remaining[Math.floor(Math.random() * remaining.length)];
-  showTechnique(pick);
+  // Lấy kỹ thuật tiếp theo từ deck
+  const tech = deck.shift();
+  deckUsed.push(tech);
+
+  // Nếu đã dùng hết 6 kỹ thuật → chuẩn bị vòng mới (xáo ngay để sẵn sàng)
+  if (deck.length === 0) shuffleDeck();
+
+  showTechnique(tech);
 }
 
 function showTechnique(tech) {
   currentTech = tech;
   const display = document.getElementById('tech-display');
   display.classList.remove('revealed');
-  void display.offsetWidth; // reflow
+  void display.offsetWidth;
 
   display.innerHTML = `
     <div class="tech-num">KỸ THUẬT ${tech.num} / 6</div>
@@ -1175,26 +1207,38 @@ function showTechnique(tech) {
   `;
   display.classList.add('revealed');
 
-  // Practice
   const pb = document.getElementById('practice-box');
   document.getElementById('practice-text').textContent = tech.practice;
   pb.classList.add('show');
 
-  // History
   const gid = document.getElementById('spin-group-select').value;
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
   spinHistory.unshift({ tech, gid, time: timeStr });
-  if (spinHistory.length > 10) spinHistory.pop();
+  // Không giới hạn history — pagination sẽ xử lý
+  histCurrentPage = 0;
+  renderSpinHistory();
+}
+
+function historyPage(dir) {
+  const totalPages = Math.ceil(spinHistory.length / HIST_PER_PAGE);
+  histCurrentPage = Math.max(0, Math.min(histCurrentPage + dir, totalPages - 1));
   renderSpinHistory();
 }
 
 function renderSpinHistory() {
   const wrap = document.getElementById('spin-history');
   const list = document.getElementById('history-list');
+  const pag  = document.getElementById('history-pagination');
+
   if (spinHistory.length === 0) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
-  list.innerHTML = spinHistory.map(h => `
+
+  const totalPages = Math.ceil(spinHistory.length / HIST_PER_PAGE);
+  const start = histCurrentPage * HIST_PER_PAGE;
+  const pageItems = spinHistory.slice(start, start + HIST_PER_PAGE);
+
+  list.innerHTML = pageItems.map(h => `
     <div class="history-item">
       <span class="history-badge">KT${h.tech.num}</span>
       <span>${h.tech.name}</span>
@@ -1202,6 +1246,16 @@ function renderSpinHistory() {
       <span class="history-time">${h.time}</span>
     </div>
   `).join('');
+
+  // Pagination controls
+  if (totalPages > 1) {
+    pag.style.display = 'flex';
+    document.getElementById('hist-page-label').textContent = `${histCurrentPage + 1} / ${totalPages}`;
+    document.getElementById('hist-prev').disabled = histCurrentPage === 0;
+    document.getElementById('hist-next').disabled = histCurrentPage >= totalPages - 1;
+  } else {
+    pag.style.display = 'none';
+  }
 }
 
 // ═══════════════════════════════════════
