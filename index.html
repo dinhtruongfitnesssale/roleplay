@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sales Roleplay · Đình Trường Master Class</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy: #1a3d7c;
+  --navy-dark: #102a5a;
+  --navy-mid: #2255a0;
+  --navy-light: #4a7cc0;
+  --navy-pale: #e8eef8;
+  --navy-bg: #f0f4fb;
+  --gold: #c9a84c;
+  --gold-light: #e8cc70;
+  --white: #ffffff;
+  --gray-50: #f8fafc;
+  --gray-100: #f0f4f8;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e0;
+  --gray-400: #a0aec0;
+  --gray-500: #718096;
+  --gray-700: #2d3748;
+  --success: #38a169;
+  --success-pale: #e6f4ee;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--navy-bg);
+  color: var(--gray-700);
+  min-height: 100vh;
+}
+
+/* ── TOP NAV ── */
+.nav {
+  background: var(--navy);
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.nav-brand {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-brand span { color: var(--gold-light); }
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.nav-tab {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,.6);
+  transition: all .14s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: #fff; background: rgba(255,255,255,.1); }
+.nav-tab.active { background: rgba(255,255,255,.18); color: #fff; }
+
+/* ── PAGES ── */
+.page { display: none; padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--navy-light);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.sub { font-size: 13px; color: var(--gray-500); margin-bottom: 28px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid var(--gray-200);
+  padding: 22px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+/* ── LEADERBOARD ── */
+.lb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.lb-card {
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  padding: 18px 16px;
+  text-align: center;
+  position: relative;
+  transition: transform .15s;
+}
+.lb-card:hover { transform: translateY(-2px); }
+.lb-card.rank-1 { border-color: var(--gold); background: linear-gradient(160deg, #fffdf0, #fff); }
+.lb-card.rank-2 { border-color: var(--gray-300); background: linear-gradient(160deg, #f8fafc, #fff); }
+.lb-card.rank-3 { border-color: #cd7f32; background: linear-gradient(160deg, #fdf6f0, #fff); }
+
+.lb-rank {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.rank-1 .lb-rank { color: var(--gold); }
+.rank-2 .lb-rank { color: var(--gray-400); }
+.rank-3 .lb-rank { color: #cd7f32; }
+.rank-4 .lb-rank, .rank-5 .lb-rank { color: var(--navy-light); }
+
+.lb-group-name { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.lb-members { font-size: 11px; color: var(--gray-400); margin-bottom: 10px; }
+.lb-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--navy-pale);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+
+/* ── GROUPS GRID ── */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.group-card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid var(--gray-200);
+  padding: 20px;
+  transition: box-shadow .15s;
+}
+.group-card:hover { box-shadow: 0 4px 16px rgba(26,61,124,.1); }
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.group-num {
+  width: 36px; height: 36px;
+  background: var(--navy);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+.group-upload-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy-light);
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.member-row.pt { background: var(--navy-pale); }
+.member-row.kh { background: var(--gray-50); border: 1px solid var(--gray-100); }
+
+.role-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.role-badge.pt { background: var(--navy); color: #fff; }
+.role-badge.kh { background: var(--gray-200); color: var(--gray-700); }
+
+.member-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--gray-700);
+  flex: 1;
+}
+.member-name.empty { color: var(--gray-300); font-style: italic; font-weight: 400; }
+
+.group-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.btn {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: none;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-dark); }
+.btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); }
+.btn-secondary:hover { background: var(--gray-200); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #2d8a5e; }
+.btn-gold { background: var(--gold); color: #fff; }
+.btn-gold:hover { background: #b8942a; }
+.btn-sm { font-size: 11px; padding: 6px 10px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* Upload history */
+.upload-list { margin-top: 12px; }
+.upload-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--success-pale);
+  border-radius: 7px;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+.upload-item-icon { color: var(--success); font-size: 14px; }
+.upload-item-name { flex: 1; color: var(--gray-700); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upload-item-date { color: var(--gray-400); font-size: 10px; flex-shrink: 0; }
+.upload-item-del { color: var(--gray-300); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; transition: color .1s; }
+.upload-item-del:hover { color: #e53e3e; }
+
+/* ── SPIN WHEEL PAGE ── */
+.spin-page-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.group-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.group-select-bar label { font-size: 12px; font-weight: 700; color: var(--gray-500); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.group-select-bar select {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  flex: 1;
+  cursor: pointer;
+  background: var(--white);
+}
+.group-select-bar select:focus { border-color: var(--navy); }
+
+/* Spin card */
+.spin-card {
+  background: var(--white);
+  border-radius: 20px;
+  border: 1px solid var(--gray-200);
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(26,61,124,.08);
+}
+
+.technique-display {
+  background: var(--navy);
+  border-radius: 14px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.technique-display::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(255,255,255,.02) 18px, rgba(255,255,255,.02) 19px);
+}
+.tech-num {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 10px;
+  opacity: .8;
+  position: relative;
+}
+.tech-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 14px;
+  position: relative;
+}
+.tech-desc {
+  font-size: 12.5px;
+  color: rgba(255,255,255,.7);
+  line-height: 1.65;
+  max-width: 400px;
+  position: relative;
+}
+.tech-placeholder {
+  color: rgba(255,255,255,.3);
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* Spinning animation */
+@keyframes spinFlash {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.technique-display.revealed .tech-num,
+.technique-display.revealed .tech-name,
+.technique-display.revealed .tech-desc {
+  animation: spinFlash .4s ease both;
+}
+.technique-display.revealed .tech-num { animation-delay: .05s; }
+.technique-display.revealed .tech-name { animation-delay: .12s; }
+.technique-display.revealed .tech-desc { animation-delay: .2s; }
+
+.spin-btn-wrap { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* Practice box */
+.practice-box {
+  margin-top: 20px;
+  background: var(--navy-pale);
+  border-radius: 12px;
+  padding: 16px 18px;
+  text-align: left;
+  display: none;
+}
+.practice-box.show { display: block; }
+.practice-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--navy-light);
+  margin-bottom: 8px;
+}
+.practice-text {
+  font-size: 13px;
+  color: var(--gray-700);
+  line-height: 1.65;
+}
+
+/* History log */
+.history-log {
+  margin-top: 20px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 16px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12.5px;
+}
+.history-item:last-child { border-bottom: none; }
+.history-badge {
+  background: var(--navy);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.history-time { color: var(--gray-400); font-size: 11px; margin-left: auto; }
+
+/* ── ADMIN PAGE ── */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.admin-group-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.admin-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-group-num-badge {
+  width: 28px; height: 28px;
+  background: var(--navy);
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.admin-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.admin-input-row label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+.admin-input-row input {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 7px;
+  padding: 8px 11px;
+  outline: none;
+  transition: border-color .12s;
+  color: var(--gray-700);
+  font-weight: 500;
+}
+.admin-input-row input:focus { border-color: var(--navy); }
+.admin-input-row input::placeholder { color: var(--gray-300); font-weight: 400; }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all .25s ease;
+  z-index: 9999;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* upload input hidden */
+.upload-input { display: none; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 100px; }
+
+/* Example highlight */
+.example-block {
+  background: rgba(255,255,255,.06);
+  border-left: 3px solid var(--gold-light);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  margin-top: 12px;
+  text-align: left;
+}
+.example-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+.example-text {
+  font-size: 12px;
+  color: rgba(255,255,255,.75);
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--gray-300);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ── ROLE SHUFFLE ── */
+.role-result {
+  margin-top: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+.role-result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+}
+.role-result-row.pt-row { background: var(--navy-pale); }
+.role-result-row.kh-row { background: var(--gray-50); }
+.role-result-row.unset { background: var(--gray-50); opacity: .5; }
+
+@keyframes roleReveal {
+  0%   { opacity: 0; transform: scale(.85) translateY(-4px); }
+  60%  { transform: scale(1.04) translateY(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.role-result-row.animate {
+  animation: roleReveal .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+.role-result-row.animate.kh-row { animation-delay: .12s; }
+
+.shuffle-btn {
+  width: 100%;
+  margin-top: 12px;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  color: #fff;
+  font-size: 12px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  transition: all .14s;
+}
+.shuffle-btn:hover { opacity: .88; transform: translateY(-1px); }
+.shuffle-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+.shuffle-icon { display: inline-block; transition: transform .5s; }
+.shuffle-icon.spinning { animation: spinIcon .5s ease; }
+@keyframes spinIcon {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Admin: member inputs (no role label) */
+.member-inputs { display: flex; flex-direction: column; gap: 8px; }
+.member-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.member-dot {
+  width: 26px; height: 26px;
+  background: var(--gray-200);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gray-500);
+  flex-shrink: 0;
+}
+.member-input-row input {
+  flex: 1;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 7px;
+  padding: 8px 11px;
+  outline: none;
+  transition: border-color .12s;
+  color: var(--gray-700);
+  font-weight: 500;
+}
+.member-input-row input:focus { border-color: var(--navy); }
+.member-input-row input::placeholder { color: var(--gray-300); font-weight: 400; }
+
+/* ── BOTTOM NAV (mobile) ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--navy-dark);
+  border-top: 1px solid rgba(255,255,255,.1);
+  z-index: 200;
+  padding: 0;
+  box-shadow: 0 -2px 16px rgba(0,0,0,.25);
+}
+.bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all .14s;
+  letter-spacing: .02em;
+  border-top: 2px solid transparent;
+}
+.bottom-nav-btn .bnav-icon { font-size: 18px; line-height: 1; }
+.bottom-nav-btn.active {
+  color: #fff;
+  border-top-color: var(--gold-light);
+}
+.bottom-nav-btn:hover { color: rgba(255,255,255,.85); }
+
+/* ── MEDIUM (tablet nhỏ) ── */
+@media (max-width: 720px) {
+  .nav-brand-sub { display: none; }
+  .nav-tab { padding: 7px 10px; font-size: 11.5px; }
+}
+
+/* ── TABLET ── */
+@media (max-width: 860px) {
+  .groups-grid { grid-template-columns: repeat(2, 1fr); }
+  .lb-grid { grid-template-columns: repeat(3, 1fr); }
+  .admin-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  /* Hide desktop nav tabs, show bottom nav */
+  .nav-tabs { display: none; }
+  .bottom-nav { display: block; }
+
+  /* Give body space for bottom nav */
+  body { padding-bottom: 68px; }
+
+  /* Shrink brand */
+  .nav { padding: 0 16px; height: 52px; }
+  .nav-brand { font-size: 13px; gap: 6px; }
+  .nav-brand .nav-brand-sub { display: none; }
+
+  /* Pages */
+  .page { padding: 16px 12px; }
+  h2 { font-size: 17px; }
+  .sub { font-size: 12px; margin-bottom: 18px; }
+
+  /* Leaderboard: 2 cols on mobile */
+  .lb-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .lb-card { padding: 14px 10px; }
+  .lb-rank { font-size: 22px; }
+  .lb-group-name { font-size: 12px; }
+  .lb-members { font-size: 10px; }
+  .lb-count { font-size: 11px; padding: 3px 8px; }
+
+  /* Groups: 1 col on mobile */
+  .groups-grid { grid-template-columns: 1fr; gap: 12px; }
+  .group-card { padding: 16px; }
+
+  /* Admin: 1 col */
+  .admin-grid { grid-template-columns: 1fr; gap: 10px; }
+  .admin-group-card { padding: 14px 16px; }
+
+  /* Spin page */
+  .spin-page-inner { max-width: 100%; }
+  .group-select-bar { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+  .group-select-bar select { min-width: 0; }
+  .spin-card { padding: 20px 16px; }
+  .technique-display { padding: 20px 16px; min-height: 180px; }
+  .tech-name { font-size: 17px; }
+  .tech-desc { font-size: 12px; max-width: 100%; }
+  .spin-btn-wrap { gap: 8px; }
+  .spin-btn-wrap .btn { font-size: 13px; padding: 11px 18px; }
+
+  /* Member rows */
+  .member-row { padding: 7px 8px; }
+  .member-name { font-size: 13px; }
+
+  /* Group actions */
+  .group-actions { flex-wrap: wrap; gap: 6px; }
+  .group-actions .btn { flex: 1; justify-content: center; min-width: 0; font-size: 11px; }
+
+  /* Toast */
+  .toast { left: 12px; right: 12px; bottom: 76px; text-align: center; }
+
+  /* Section title */
+  .section-title { font-size: 10px; }
+}
+
+/* ── SMALL PHONES ── */
+@media (max-width: 380px) {
+  .lb-grid { grid-template-columns: 1fr; }
+  .lb-card { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 14px; }
+  .lb-rank { font-size: 26px; margin-bottom: 0; }
+  .nav-brand { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <span>Sales</span>Roleplay
+    <span class="nav-brand-sub" style="font-size:11px;font-weight:500;opacity:.45;margin-left:2px">· Đình Trường</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home', this)">🏠 Tổng quan</button>
+    <button class="nav-tab" onclick="showPage('spin', this)">🎲 Rút kỹ thuật</button>
+    <button class="nav-tab" onclick="showPage('admin', this)">⚙️ Cài đặt</button>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bottom-nav-btn active" id="bnav-home" onclick="showPage('home', this, true)">
+      <span class="bnav-icon">🏠</span>Tổng quan
+    </button>
+    <button class="bottom-nav-btn" id="bnav-spin" onclick="showPage('spin', this, true)">
+      <span class="bnav-icon">🎲</span>Rút kỹ thuật
+    </button>
+    <button class="bottom-nav-btn" id="bnav-admin" onclick="showPage('admin', this, true)">
+      <span class="bnav-icon">⚙️</span>Cài đặt
+    </button>
+  </div>
+</nav>
+
+<!-- ======================== PAGE: HOME ======================== -->
+<div class="page active" id="page-home">
+
+  <!-- Leaderboard -->
+  <div class="section-title">🏆 BXH Top 5 nhóm upload đều nhất</div>
+  <div class="lb-grid" id="leaderboard"></div>
+
+  <!-- Groups -->
+  <div class="section-title">👥 Tất cả 16 nhóm</div>
+  <div class="groups-grid" id="groups-grid"></div>
+</div>
+
+<!-- ======================== PAGE: SPIN ======================== -->
+<div class="page" id="page-spin">
+  <div class="spin-page-inner">
+    <h2>Rút kỹ thuật ngẫu nhiên</h2>
+    <p class="sub">Chọn nhóm của bạn, PT bấm rút để nhận kỹ thuật bán hàng cần thực hành.</p>
+
+    <div class="group-select-bar">
+      <label>Nhóm</label>
+      <select id="spin-group-select">
+        <option value="">— Chọn nhóm —</option>
+      </select>
+    </div>
+
+    <div class="spin-card">
+      <div class="technique-display" id="tech-display">
+        <div class="tech-placeholder">Bấm "Rút ngẫu nhiên" để bắt đầu</div>
+      </div>
+
+      <div class="spin-btn-wrap">
+        <button class="btn btn-gold" onclick="spinTechnique()" style="font-size:14px;padding:12px 28px">
+          🎲 Rút ngẫu nhiên
+        </button>
+        <button class="btn btn-secondary" onclick="spinAll()" title="Rút khác">
+          🔄 Rút lại
+        </button>
+      </div>
+
+      <div class="practice-box" id="practice-box">
+        <div class="practice-title">📝 Bài thực hành</div>
+        <div class="practice-text" id="practice-text"></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-log" id="spin-history" style="display:none">
+      <div class="section-title" style="margin-bottom:10px">Lịch sử rút hôm nay</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE: ADMIN ======================== -->
+<div class="page" id="page-admin">
+  <h2>⚙️ Quản lý thành viên nhóm</h2>
+  <p class="sub">Nhập tên thành viên cho 16 nhóm. Mỗi nhóm gồm 1 PT và 1 KH.</p>
+  <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="saveAllMembers()">💾 Lưu tất cả</button>
+    <button class="btn btn-secondary" onclick="resetAll()">🗑 Reset dữ liệu</button>
+  </div>
+  <div class="admin-grid" id="admin-grid"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden upload inputs (one per group) -->
+<div id="upload-inputs"></div>
+
+<script>
+// ═══════════════════════════════════════
+//   DATA
+// ═══════════════════════════════════════
+const TECHNIQUES = [
+  {
+    num: 1,
+    name: 'Vẽ bức tranh thành công/thất bại',
+    short: 'Kỹ thuật V-A-K',
+    desc: 'Sử dụng công thức V-A-K (Visual - Auditory - Kinesthetic) để giúp khách hàng hình dung kết quả:\n• Visual: Thấy gì khi đạt mục tiêu?\n• Auditory: Nghe thấy gì?\n• Kinesthetic: Cảm thấy gì?',
+    practice: 'Chia thành các cặp. Một người đóng vai PT, một người đóng vai KH. Thực hành kỹ thuật số 1. Khéo léo sử dụng kỹ thuật này trong phần đặt câu hỏi - khai thác thông tin để thúc đẩy động lực khách hàng biến việc ưu tiên tập luyện trở thành quan trọng nhất.',
+    example: '"Chị thử tưởng tượng sau 3 tháng, chị mặc chiếc váy size S, nhìn vào gương thấy vòng eo thon gọn... Chị nghe thấy bạn bè trầm trồ \'Sao dạo này trẻ thế?\'... Và cảm giác tự tin dâng trào trong lồng ngực khi đó thế nào ạ?"'
+  },
+  {
+    num: 2,
+    name: 'Assumptive Close',
+    short: 'Chốt giả định',
+    desc: 'Hành động như thể khách đã đồng ý. Không hỏi "Có mua không?" mà hỏi "Khi nào bắt đầu?"',
+    practice: 'Chia thành các cặp. Thực hành sau khi đã tư vấn đầy đủ lộ trình. Sử dụng kỹ thuật này để chuyển ngay sang phần mua hợp đồng.',
+    example: '"Giả sử với lộ trình này, chị sẽ giảm được...kg trong...tháng. Chị có thể bắt đầu ngay hôm nay chứ ạ? Tuyệt vời! Em sẽ làm hợp đồng luôn, chị muốn bắt đầu từ bây giờ hay ngày mai?"'
+  },
+  {
+    num: 3,
+    name: 'Summary Close',
+    short: 'Chốt tóm tắt',
+    desc: 'Tóm tắt theo trình tự: Vấn đề → Giải pháp → Giá trị & Thời gian → Lời chốt. Tạo đà "Yes" liên tục để não bộ thấy quyết định đơn giản hơn.',
+    practice: 'Chia thành các cặp. Thực hành sau khi đã tư vấn đầy đủ lộ trình. Tạo đà Yes liên tục rồi chuyển sang chốt hợp đồng.',
+    example: '"Chị Lan, mục tiêu lớn nhất của chị là giảm 5kg để tháng 12 diện váy cưới em gái, đúng không? (Yes 1) → Em đã thiết kế lộ trình 48 buổi, chị thấy ổn chứ? (Yes 2) → Gói này 30 triệu trong 3 tháng (Yes 3) → Chị muốn bắt đầu ngay chiều mai hay sáng Thứ Hai?"'
+  },
+  {
+    num: 4,
+    name: 'Trial Close',
+    short: 'Chốt thăm dò',
+    desc: 'Đặt câu hỏi kiểm tra độ sẵn sàng mà không rủi ro. Nếu phản hồi tốt → Chốt thật. Nếu ngập ngừng → Quay lại xử lý từ chối.',
+    practice: 'Chia thành các cặp. Thực hành sau khi tư vấn đầy đủ. Dùng thang điểm 1-10 để đo độ quyết tâm rồi thúc đẩy lên 9-10 trước khi chốt.',
+    example: '"Trên thang điểm 1-10, chị thấy mức độ quyết tâm thực hiện mục tiêu giảm 20kg ở mức nào?" → Nếu 7-8: Thúc đẩy lên 9-10 → Nếu 9-10: "Vậy em làm hợp đồng luôn, chị muốn thanh toán tiền mặt hay thẻ?"'
+  },
+  {
+    num: 5,
+    name: 'Direct Ask Close',
+    short: 'Chốt trực tiếp',
+    desc: 'Nhấn mạnh kết quả đạt được, hỏi thẳng và tự tin. Sau khi hỏi → IM LẶNG TUYỆT ĐỐI. Sự im lặng là sức mạnh.',
+    practice: 'Chia thành các cặp. Thực hành sau khi tư vấn đầy đủ. Hỏi thẳng rồi im lặng hoàn toàn - không được nói thêm gì cả.',
+    example: '"Với những gì em vừa chia sẻ, chị đã sẵn sàng để bắt đầu tập luyện chưa ạ?" [Im lặng hoàn toàn, chờ khách trả lời]'
+  },
+  {
+    num: 6,
+    name: 'Scarcity / Urgency Close',
+    short: 'Chốt khan hiếm',
+    desc: 'Tạo sự khẩn cấp dựa trên SỰ THẬT (giới hạn chỗ, thời gian, giá ưu đãi). TUYỆT ĐỐI không bịa chương trình - khan hiếm giả tạo sẽ giết chết uy tín.',
+    practice: 'Chia thành các cặp. Thực hành sau khi tư vấn đầy đủ. Chỉ dùng thông tin THẬT về ưu đãi/giới hạn để tạo khẩn cấp.',
+    example: '"Hiện tại em chỉ còn 2 suất cho tháng này với giá ưu đãi này. Tuần sau giá sẽ tăng thêm 15%. Chị muốn giữ suất ngay hôm nay không ạ?"'
+  }
+];
+
+const NUM_GROUPS = 16;
+let groups = [];
+let spinHistory = [];
+let currentTech = null;
+
+// ═══════════════════════════════════════
+//   STORAGE HELPERS
+// ═══════════════════════════════════════
+async function loadGroups() {
+  try {
+    const r = await window.storage.get('groups-data');
+    if (r) groups = JSON.parse(r.value);
+    else initGroups();
+  } catch { initGroups(); }
+}
+
+function initGroups() {
+  groups = Array.from({length: NUM_GROUPS}, (_, i) => ({
+    id: i + 1,
+    member1: '',
+    member2: '',
+    ptName: '',  // assigned after shuffle
+    khName: '',  // assigned after shuffle
+    uploads: []
+  }));
+}
+
+async function saveGroups() {
+  try {
+    await window.storage.set('groups-data', JSON.stringify(groups));
+  } catch(e) { console.error(e); }
+}
+
+// ═══════════════════════════════════════
+//   PAGE NAVIGATION
+// ═══════════════════════════════════════
+function showPage(name, el, isBottom) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+
+  // Sync top nav
+  const pageOrder = ['home','spin','admin'];
+  const idx = pageOrder.indexOf(name);
+  document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
+  // Sync bottom nav
+  document.getElementById('bnav-' + name)?.classList.add('active');
+
+  if (name === 'home') renderHome();
+  if (name === 'spin') renderSpinGroupSelect();
+  if (name === 'admin') renderAdmin();
+}
+
+// ═══════════════════════════════════════
+//   HOME: LEADERBOARD + GROUPS
+// ═══════════════════════════════════════
+function renderHome() {
+  renderLeaderboard();
+  renderGroupsGrid();
+}
+
+function renderLeaderboard() {
+  const sorted = [...groups]
+    .filter(g => g.uploads.length > 0)
+    .sort((a, b) => b.uploads.length - a.uploads.length)
+    .slice(0, 5);
+
+  const lb = document.getElementById('leaderboard');
+
+  if (sorted.length === 0) {
+    lb.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Chưa có nhóm nào upload bản ghi âm. Hãy bắt đầu roleplay! 🎤</div>';
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+  lb.innerHTML = sorted.map((g, i) => {
+    const names = g.ptName && g.khName
+      ? `${g.ptName} · ${g.khName}`
+      : [g.member1, g.member2].filter(Boolean).join(' · ') || 'Chưa có thành viên';
+    return `
+    <div class="lb-card rank-${i+1}">
+      <div class="lb-rank">${medals[i]}</div>
+      <div class="lb-group-name">Nhóm ${g.id}</div>
+      <div class="lb-members">${names}</div>
+      <div class="lb-count">🎙 ${g.uploads.length} bản ghi</div>
+    </div>
+  `}).join('');
+}
+
+function renderGroupsGrid() {
+  const grid = document.getElementById('groups-grid');
+  grid.innerHTML = groups.map(g => {
+    const hasMembers = g.member1 || g.member2;
+    const hasRoles = g.ptName && g.khName;
+    return `
+    <div class="group-card" id="gc-${g.id}">
+      <div class="group-header">
+        <div class="group-num">${g.id}</div>
+        <div class="group-upload-count">
+          🎙 <strong>${g.uploads.length}</strong> bản ghi
+        </div>
+      </div>
+
+      ${hasMembers ? `
+        <div class="role-result" id="role-result-${g.id}">
+          <div class="role-result-row ${hasRoles ? 'pt-row' : 'unset'}" id="row-pt-${g.id}">
+            <span class="role-badge pt">PT</span>
+            <span class="member-name ${hasRoles ? '' : 'empty'}">${hasRoles ? g.ptName : (g.member1 || '—')}</span>
+          </div>
+          <div class="role-result-row ${hasRoles ? 'kh-row' : 'unset'}" id="row-kh-${g.id}">
+            <span class="role-badge kh">KH</span>
+            <span class="member-name ${hasRoles ? '' : 'empty'}">${hasRoles ? g.khName : (g.member2 || '—')}</span>
+          </div>
+        </div>
+        <button class="shuffle-btn" onclick="shuffleRoles(${g.id})" id="sbtn-${g.id}" ${!hasMembers ? 'disabled' : ''}>
+          <span class="shuffle-icon" id="sicon-${g.id}">🎲</span>
+          ${hasRoles ? 'Trộn lại vai' : 'Trộn vai ngẫu nhiên'}
+        </button>
+      ` : `
+        <div class="empty-state" style="padding:16px 10px;font-size:12px">
+          Chưa có thành viên. Vào ⚙️ Cài đặt để thêm tên.
+        </div>
+      `}
+
+      <div class="group-actions" style="margin-top:${hasMembers?'10px':'0'}">
+        <button class="btn btn-primary btn-sm" onclick="triggerUpload(${g.id})">
+          📤 Upload ghi âm
+        </button>
+        ${g.uploads.length > 0 ? `<button class="btn btn-secondary btn-sm" onclick="toggleUploads(${g.id})">📋 (${g.uploads.length})</button>` : ''}
+      </div>
+
+      <div class="upload-list" id="ul-${g.id}" style="display:none">
+        ${g.uploads.length === 0 ? '<div class="empty-state" style="padding:10px">Chưa có bản ghi</div>' :
+          g.uploads.map((u, ui) => `
+            <div class="upload-item">
+              <span class="upload-item-icon">✅</span>
+              <span class="upload-item-name" title="${u.name}">${u.name}</span>
+              <span class="upload-item-date">${u.date}</span>
+              <span class="upload-item-del" onclick="deleteUpload(${g.id}, ${ui})" title="Xoá">×</span>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+  `}).join('');
+}
+
+function toggleUploads(gid) {
+  const el = document.getElementById('ul-' + gid);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════
+//   UPLOAD
+// ═══════════════════════════════════════
+function triggerUpload(gid) {
+  const inp = document.getElementById('uinp-' + gid);
+  if (inp) inp.click();
+}
+
+function buildUploadInputs() {
+  const wrap = document.getElementById('upload-inputs');
+  wrap.innerHTML = groups.map(g => `
+    <input class="upload-input" type="file" id="uinp-${g.id}" accept="audio/*,video/*,.mp3,.wav,.m4a,.ogg,.aac,.mp4,.webm" onchange="handleUpload(${g.id}, this)"/>
+  `).join('');
+}
+
+function handleUpload(gid, inp) {
+  if (!inp.files || inp.files.length === 0) return;
+  const file = inp.files[0];
+  const g = groups.find(x => x.id === gid);
+  if (!g) return;
+
+  const now = new Date();
+  const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+  g.uploads.push({ name: file.name, date: dateStr, ts: Date.now() });
+
+  saveGroups();
+  renderHome();
+  buildUploadInputs();
+  showToast(`✅ Nhóm ${gid} đã upload: ${file.name}`);
+  inp.value = '';
+}
+
+function deleteUpload(gid, idx) {
+  if (!confirm('Xoá bản ghi này?')) return;
+  const g = groups.find(x => x.id === gid);
+  if (!g) return;
+  g.uploads.splice(idx, 1);
+  saveGroups();
+  renderHome();
+  showToast('🗑 Đã xoá bản ghi');
+}
+
+// ═══════════════════════════════════════
+//   SPIN
+// ═══════════════════════════════════════
+function renderSpinGroupSelect() {
+  const sel = document.getElementById('spin-group-select');
+  sel.innerHTML = '<option value="">— Chọn nhóm —</option>' +
+    groups.map(g => {
+      const label = g.ptName && g.khName
+        ? `${g.ptName} (PT) & ${g.khName} (KH)`
+        : [g.member1, g.member2].filter(Boolean).join(' & ') || 'Chưa có thành viên';
+      return `<option value="${g.id}">Nhóm ${g.id} — ${label}</option>`;
+    }).join('');
+}
+
+function spinTechnique() {
+  const idx = Math.floor(Math.random() * TECHNIQUES.length);
+  showTechnique(TECHNIQUES[idx]);
+}
+
+function spinAll() {
+  if (!currentTech) { spinTechnique(); return; }
+  const remaining = TECHNIQUES.filter(t => t.num !== currentTech.num);
+  const pick = remaining[Math.floor(Math.random() * remaining.length)];
+  showTechnique(pick);
+}
+
+function showTechnique(tech) {
+  currentTech = tech;
+  const display = document.getElementById('tech-display');
+  display.classList.remove('revealed');
+  void display.offsetWidth; // reflow
+
+  display.innerHTML = `
+    <div class="tech-num">KỸ THUẬT ${tech.num} / 6</div>
+    <div class="tech-name">${tech.name}</div>
+    <div class="tech-desc">${tech.short}</div>
+    <div class="tech-desc" style="margin-top:10px">${tech.desc.replace(/\n/g,'<br/>')}</div>
+    ${tech.example ? `
+      <div class="example-block">
+        <div class="example-label">Ví dụ thực tế</div>
+        <div class="example-text">${tech.example}</div>
+      </div>
+    ` : ''}
+  `;
+  display.classList.add('revealed');
+
+  // Practice
+  const pb = document.getElementById('practice-box');
+  document.getElementById('practice-text').textContent = tech.practice;
+  pb.classList.add('show');
+
+  // History
+  const gid = document.getElementById('spin-group-select').value;
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  spinHistory.unshift({ tech, gid, time: timeStr });
+  if (spinHistory.length > 10) spinHistory.pop();
+  renderSpinHistory();
+}
+
+function renderSpinHistory() {
+  const wrap = document.getElementById('spin-history');
+  const list = document.getElementById('history-list');
+  if (spinHistory.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = spinHistory.map(h => `
+    <div class="history-item">
+      <span class="history-badge">KT${h.tech.num}</span>
+      <span>${h.tech.name}</span>
+      ${h.gid ? `<span style="font-size:11px;color:var(--gray-400)">Nhóm ${h.gid}</span>` : ''}
+      <span class="history-time">${h.time}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//   SHUFFLE ROLES
+// ═══════════════════════════════════════
+function shuffleRoles(gid) {
+  const g = groups.find(x => x.id === gid);
+  if (!g || (!g.member1 && !g.member2)) return;
+
+  // Animate spin icon
+  const icon = document.getElementById('sicon-' + gid);
+  if (icon) { icon.classList.remove('spinning'); void icon.offsetWidth; icon.classList.add('spinning'); }
+
+  // Random assign
+  const members = [g.member1, g.member2].filter(Boolean);
+  if (members.length < 2) {
+    // Only 1 member — assign as PT
+    g.ptName = members[0] || '';
+    g.khName = '';
+  } else {
+    const shuffled = Math.random() < 0.5;
+    g.ptName = shuffled ? members[0] : members[1];
+    g.khName = shuffled ? members[1] : members[0];
+  }
+
+  saveGroups();
+
+  // Animate rows in-place without full re-render
+  const rowPT = document.getElementById('row-pt-' + gid);
+  const rowKH = document.getElementById('row-kh-' + gid);
+  const btn   = document.getElementById('sbtn-' + gid);
+
+  if (rowPT) {
+    rowPT.className = 'role-result-row pt-row animate';
+    rowPT.innerHTML = `<span class="role-badge pt">PT</span><span class="member-name">${g.ptName}</span>`;
+  }
+  if (rowKH) {
+    rowKH.className = 'role-result-row kh-row animate';
+    rowKH.innerHTML = `<span class="role-badge kh">KH</span><span class="member-name">${g.khName}</span>`;
+  }
+  if (btn) btn.innerHTML = `<span class="shuffle-icon spinning" id="sicon-${gid}">🎲</span> Trộn lại vai`;
+
+  // Also update leaderboard members display
+  renderLeaderboard();
+  showToast(`🎲 Nhóm ${gid}: ${g.ptName} → PT · ${g.khName} → KH`);
+}
+
+// ═══════════════════════════════════════
+//   ADMIN
+// ═══════════════════════════════════════
+function renderAdmin() {
+  const grid = document.getElementById('admin-grid');
+  grid.innerHTML = groups.map(g => `
+    <div class="admin-group-card">
+      <div class="admin-group-title">
+        <div class="admin-group-num-badge">${g.id}</div>
+        Nhóm ${g.id}
+        ${g.ptName ? `<span style="font-size:10px;color:var(--gray-400);font-weight:500;margin-left:auto">PT: ${g.ptName}</span>` : ''}
+      </div>
+      <div class="member-inputs">
+        <div class="member-input-row">
+          <div class="member-dot">1</div>
+          <input type="text" id="m1-${g.id}" placeholder="Tên thành viên 1..." value="${g.member1||''}" />
+        </div>
+        <div class="member-input-row">
+          <div class="member-dot">2</div>
+          <input type="text" id="m2-${g.id}" placeholder="Tên thành viên 2..." value="${g.member2||''}" />
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveAllMembers() {
+  groups.forEach(g => {
+    const newM1 = (document.getElementById('m1-' + g.id)?.value || '').trim();
+    const newM2 = (document.getElementById('m2-' + g.id)?.value || '').trim();
+    // If members changed, reset roles
+    if (newM1 !== g.member1 || newM2 !== g.member2) {
+      g.ptName = '';
+      g.khName = '';
+    }
+    g.member1 = newM1;
+    g.member2 = newM2;
+  });
+  saveGroups();
+  showToast('💾 Đã lưu! Vào Tổng quan để trộn vai ngẫu nhiên.');
+}
+
+function resetAll() {
+  if (!confirm('Reset toàn bộ dữ liệu (tên thành viên + lịch sử upload)?')) return;
+  initGroups();
+  saveGroups();
+  renderAdmin();
+  showToast('🗑 Đã reset dữ liệu');
+}
+
+// ═══════════════════════════════════════
+//   TOAST
+// ═══════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════
+//   INIT
+// ═══════════════════════════════════════
+(async () => {
+  await loadGroups();
+  buildUploadInputs();
+  renderHome();
+})();
+</script>
+</body>
+</html>
