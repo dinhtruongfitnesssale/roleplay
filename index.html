@@ -513,6 +513,130 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 
+/* ── GOOGLE SHEETS SETUP ── */
+.gs-setup {
+  background: var(--white);
+  border: 1.5px solid var(--gray-200);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.gs-setup.connected {
+  border-color: var(--success);
+  background: var(--success-pale);
+}
+.gs-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.gs-icon {
+  width: 34px; height: 34px;
+  background: #0f9d58;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.gs-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+.gs-desc  { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+.gs-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.gs-status.ok  { background: var(--success-pale); color: var(--success); }
+.gs-status.err { background: #fff0f0; color: #e53e3e; }
+.gs-status.loading { background: var(--navy-pale); color: var(--navy); }
+
+.gs-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.gs-url-input {
+  flex: 1;
+  min-width: 200px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 9px 12px;
+  outline: none;
+  color: var(--gray-700);
+  transition: border-color .12s;
+}
+.gs-url-input:focus { border-color: var(--navy); }
+.gs-url-input::placeholder { color: var(--gray-300); }
+
+.gs-steps {
+  margin-top: 16px;
+  background: var(--gray-50);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: none;
+}
+.gs-steps.show { display: block; }
+.gs-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  color: var(--gray-700);
+  line-height: 1.55;
+}
+.gs-step:last-child { margin-bottom: 0; }
+.gs-step-num {
+  width: 20px; height: 20px;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.gs-step code {
+  background: var(--gray-200);
+  color: var(--navy);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: monospace;
+}
+.gs-sync-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--gray-500);
+}
+.sync-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  flex-shrink: 0;
+}
+.sync-dot.syncing { background: var(--gold); animation: pulse-dot 1s infinite; }
+.sync-dot.ok      { background: var(--success); }
+.sync-dot.err     { background: #e53e3e; }
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; } 50% { opacity: .3; }
+}
+
 .history-pagination {
   display: flex;
   align-items: center;
@@ -861,9 +985,60 @@ h2 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; 
 
 <!-- ======================== PAGE: ADMIN ======================== -->
 <div class="page" id="page-admin">
-  <h2>⚙️ Quản lý thành viên nhóm</h2>
-  <p class="sub">Nhập tên thành viên cho 7 nhóm. Mỗi nhóm gồm 2 thành viên, vai trò sẽ được trộn ngẫu nhiên.</p>
-  <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
+  <h2>⚙️ Cài đặt</h2>
+
+  <!-- Google Sheets Setup -->
+  <div class="gs-setup" id="gs-setup-box">
+    <div class="gs-header">
+      <div class="gs-icon">📊</div>
+      <div>
+        <div class="gs-title">Đồng bộ Google Sheets</div>
+        <div class="gs-desc">Lưu data lên cloud — mọi thiết bị đều dùng chung</div>
+      </div>
+      <div class="gs-status loading" id="gs-status">⏳ Chưa kết nối</div>
+    </div>
+
+    <div class="gs-input-row">
+      <input class="gs-url-input" id="gs-url" type="text" placeholder="Dán Web App URL từ Google Apps Script vào đây..."/>
+      <button class="btn btn-primary btn-sm" onclick="gsConnect()">Kết nối</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleGsSteps()">📖 Hướng dẫn</button>
+    </div>
+
+    <div class="gs-sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Chưa đồng bộ</span>
+    </div>
+
+    <!-- Hướng dẫn setup -->
+    <div class="gs-steps" id="gs-steps">
+      <div class="gs-step">
+        <div class="gs-step-num">1</div>
+        <div>Vào <strong>script.google.com</strong> → <strong>New project</strong> → xoá code cũ và dán code bên dưới vào</div>
+      </div>
+      <div class="gs-step">
+        <div class="gs-step-num">2</div>
+        <div>Click <strong>Deploy</strong> → <strong>New deployment</strong> → chọn type <code>Web app</code> → Execute as <code>Me</code> → Who has access <code>Anyone</code> → Deploy</div>
+      </div>
+      <div class="gs-step">
+        <div class="gs-step-num">3</div>
+        <div>Copy <strong>Web app URL</strong> và dán vào ô trên → bấm <strong>Kết nối</strong></div>
+      </div>
+      <div class="gs-step">
+        <div class="gs-step-num">4</div>
+        <div>Xong! Data sẽ tự đồng bộ mỗi khi lưu. Mọi thiết bị mở link GitHub đều dùng chung data.</div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px;letter-spacing:.06em">📋 CODE GOOGLE APPS SCRIPT (copy toàn bộ):</div>
+        <textarea id="gas-code" readonly onclick="this.select()" style="width:100%;height:160px;font-family:monospace;font-size:11px;border:1px solid var(--gray-200);border-radius:8px;padding:10px;resize:none;background:var(--gray-50);color:var(--gray-700);line-height:1.5"></textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="copyGasCode()">📋 Copy code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Members -->
+  <div class="section-title">👥 Thành viên các nhóm</div>
+  <p class="sub" style="margin-top:-10px">Nhập tên thành viên cho 7 nhóm. Mỗi nhóm gồm 2 thành viên, vai trò sẽ được trộn ngẫu nhiên.</p>
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="saveAllMembers()">💾 Lưu tất cả</button>
     <button class="btn btn-secondary" onclick="resetAll()">🗑 Reset dữ liệu</button>
   </div>
@@ -957,59 +1132,182 @@ function shuffleDeck() {
 // ═══════════════════════════════════════
 //   STORAGE HELPERS
 // ═══════════════════════════════════════
-async function loadGroups() {
-  try {
-    const val = await storageGet('groups-data');
-    if (val) {
-      const saved = JSON.parse(val);
-      if (saved.length !== NUM_GROUPS) {
-        groups = Array.from({length: NUM_GROUPS}, (_, i) => {
-          const old = saved.find(g => g.id === i + 1);
-          return old ? {...old, id: i + 1} : {
-            id: i + 1, member1: '', member2: '', ptName: '', khName: '', uploads: []
-          };
-        });
-        await saveGroups();
-      } else {
-        groups = saved;
-      }
-    } else {
-      initGroups();
-    }
-  } catch { initGroups(); }
-}
 
 function initGroups() {
   groups = Array.from({length: NUM_GROUPS}, (_, i) => ({
     id: i + 1,
     member1: '',
     member2: '',
-    ptName: '',  // assigned after shuffle
-    khName: '',  // assigned after shuffle
+    ptName: '',
+    khName: '',
     uploads: []
   }));
 }
 
-// ── Storage: window.storage (Claude artifact) → localStorage fallback ──
-async function storageGet(key) {
-  try {
-    if (window.storage) {
-      const r = await window.storage.get(key);
-      return r ? r.value : null;
-    }
-  } catch {}
-  return localStorage.getItem(key);
+// ═══════════════════════════════════════
+//   GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════
+const LS_KEY   = 'dtroleplay';
+const GS_URL_KEY = 'dtroleplay-gsurl';
+
+let gsUrl = localStorage.getItem(GS_URL_KEY) || '';
+let syncTimer = null;
+
+// GAS code người dùng cần dán
+const GAS_CODE = `const SHEET_NAME = 'RoleplayData';
+
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
+    || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  const data = sheet.getRange('A1').getValue();
+  return ContentService.createTextOutput(data || '[]')
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-async function storageSet(key, val) {
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
+    || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  sheet.getRange('A1').setValue(e.postData.contents);
+  return ContentService.createTextOutput('ok')
+    .setMimeType(ContentService.MimeType.TEXT);
+}`;
+
+function initGsUI() {
+  const ta = document.getElementById('gas-code');
+  if (ta) ta.value = GAS_CODE;
+
+  if (gsUrl) {
+    document.getElementById('gs-url').value = gsUrl;
+    updateSyncStatus('loading', '⏳ Đang kiểm tra kết nối...');
+    gsLoad().then(() => {}).catch(() => updateSyncStatus('err', '❌ Không kết nối được'));
+  }
+}
+
+function toggleGsSteps() {
+  const el = document.getElementById('gs-steps');
+  el.classList.toggle('show');
+}
+
+function copyGasCode() {
+  const ta = document.getElementById('gas-code');
+  ta.select();
+  document.execCommand('copy');
+  showToast('📋 Đã copy code! Dán vào Google Apps Script.');
+}
+
+async function gsConnect() {
+  const url = document.getElementById('gs-url').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showToast('❌ URL không hợp lệ. Phải bắt đầu bằng https://script.google.com');
+    return;
+  }
+  gsUrl = url;
+  localStorage.setItem(GS_URL_KEY, gsUrl);
+  updateSyncStatus('loading', '⏳ Đang kết nối...');
   try {
-    if (window.storage) await window.storage.set(key, val);
-  } catch {}
-  try { localStorage.setItem(key, val); } catch {}
+    await gsSave();
+    updateSyncStatus('ok', '✅ Đã kết nối Google Sheets');
+    showToast('✅ Kết nối thành công! Data sẽ đồng bộ tự động.');
+  } catch(e) {
+    updateSyncStatus('err', '❌ Lỗi: ' + e.message);
+    showToast('❌ Không kết nối được. Kiểm tra lại URL.');
+  }
+}
+
+async function gsLoad() {
+  if (!gsUrl) return;
+  const res = await fetch(gsUrl, { method: 'GET' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  const parsed = JSON.parse(text);
+  if (Array.isArray(parsed) && parsed.length > 0) {
+    // Merge với NUM_GROUPS
+    const saved = parsed;
+    if (saved.length !== NUM_GROUPS) {
+      groups = Array.from({length: NUM_GROUPS}, (_, i) => {
+        const old = saved.find(g => g.id === i + 1);
+        return old ? {...old, id: i + 1} : {id: i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]};
+      });
+    } else {
+      groups = saved;
+    }
+    // Cũng lưu local
+    localStorage.setItem(LS_KEY, JSON.stringify(groups));
+    renderHome();
+    renderAdmin();
+    updateSyncStatus('ok', '✅ Đồng bộ lúc ' + timeNow());
+  }
+}
+
+async function gsSave() {
+  if (!gsUrl) return;
+  const res = await fetch(gsUrl, {
+    method: 'POST',
+    body: JSON.stringify(groups),
+    headers: { 'Content-Type': 'text/plain' }
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  localStorage.setItem(LS_KEY, JSON.stringify(groups));
+  updateSyncStatus('ok', '✅ Đã lưu lúc ' + timeNow());
+}
+
+function updateSyncStatus(state, msg) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  const badge = document.getElementById('gs-status');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + (state === 'ok' ? 'ok' : state === 'err' ? 'err' : 'syncing');
+  if (label) label.textContent = msg;
+  if (badge) {
+    badge.className = 'gs-status ' + (state === 'ok' ? 'ok' : state === 'err' ? 'err' : 'loading');
+    badge.textContent = state === 'ok' ? '✅ Đã kết nối' : state === 'err' ? '❌ Lỗi' : '⏳ Đang kết nối';
+  }
+}
+
+function timeNow() {
+  const n = new Date();
+  return `${n.getHours().toString().padStart(2,'0')}:${n.getMinutes().toString().padStart(2,'0')}`;
+}
+
+// ── Local storage fallback ──
+function localSave() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(groups)); } catch {}
+}
+function localLoad() {
+  try {
+    const v = localStorage.getItem(LS_KEY);
+    return v ? JSON.parse(v) : null;
+  } catch { return null; }
 }
 
 async function saveGroups() {
-  await storageSet('groups-data', JSON.stringify(groups));
+  localSave(); // luôn lưu local ngay lập tức
+  if (gsUrl) {
+    updateSyncStatus('syncing', '⏳ Đang đồng bộ...');
+    gsSave().catch(e => updateSyncStatus('err', '❌ Lỗi đồng bộ: ' + e.message));
+  }
+}
+
+async function loadGroups() {
+  // 1. Load local trước để UI hiện ngay
+  const local = localLoad();
+  if (local) {
+    groups = local.length !== NUM_GROUPS
+      ? Array.from({length: NUM_GROUPS}, (_, i) => local.find(g => g.id === i+1) || {id:i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]})
+      : local;
+  } else {
+    initGroups();
+  }
+
+  // 2. Nếu có Google Sheets URL → load từ cloud (sẽ override local nếu có data mới hơn)
+  if (gsUrl) {
+    updateSyncStatus('loading', '⏳ Đang tải từ Google Sheets...');
+    try {
+      await gsLoad();
+    } catch(e) {
+      updateSyncStatus('err', '❌ Không tải được từ Sheets — dùng data local');
+    }
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1386,6 +1684,7 @@ function showToast(msg) {
   await loadGroups();
   buildUploadInputs();
   renderHome();
+  initGsUI();
 })();
 </script>
 </body>
