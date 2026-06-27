@@ -1157,19 +1157,24 @@ let syncTimer = null;
 const GAS_CODE = `const SHEET_NAME = 'RoleplayData';
 
 function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
-    || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  const sheet = getSheet();
   const data = sheet.getRange('A1').getValue();
-  return ContentService.createTextOutput(data || '[]')
-    .setMimeType(ContentService.MimeType.JSON);
+  const output = ContentService.createTextOutput(e.parameter.callback + '(' + (data || '[]') + ')')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return output;
 }
 
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
-    || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  const sheet = getSheet();
   sheet.getRange('A1').setValue(e.postData.contents);
-  return ContentService.createTextOutput('ok')
-    .setMimeType(ContentService.MimeType.TEXT);
+  const cb = e.parameter.callback || 'cb';
+  return ContentService.createTextOutput(cb + '("ok")')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function getSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
 }`;
 
 function initGsUI() {
@@ -1181,6 +1186,96 @@ function initGsUI() {
     updateSyncStatus('loading', '⏳ Đang kiểm tra kết nối...');
     gsLoad().then(() => {}).catch(() => updateSyncStatus('err', '❌ Không kết nối được'));
   }
+}
+
+// JSONP helper — tránh CORS hoàn toàn
+function jsonpFetch(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'gs_cb_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Timeout'));
+    }, 10000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Script load error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+function jsonpPost(url, data) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'gs_post_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Timeout'));
+    }, 10000);
+
+    window[cbName] = (result) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(result);
+    };
+
+    // Dùng form POST qua hidden iframe để gửi data
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url + '?callback=' + cbName;
+    form.target = 'gs_iframe_' + cbName;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = data;
+    form.appendChild(input);
+
+    const iframe = document.createElement('iframe');
+    iframe.name = 'gs_iframe_' + cbName;
+    iframe.style.display = 'none';
+
+    document.body.appendChild(form);
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      // POST thành công, cleanup
+      setTimeout(() => {
+        form.remove();
+        iframe.remove();
+        clearTimeout(timeout);
+        delete window[cbName];
+        resolve('ok');
+      }, 500);
+    };
+
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      form.remove();
+      iframe.remove();
+      reject(new Error('Post error'));
+    };
+
+    document.head.appendChild(script);
+    form.submit();
+  });
 }
 
 function toggleGsSteps() {
@@ -1205,50 +1300,53 @@ async function gsConnect() {
   localStorage.setItem(GS_URL_KEY, gsUrl);
   updateSyncStatus('loading', '⏳ Đang kết nối...');
   try {
+    // Test GET trước
+    await jsonpFetch(gsUrl);
+    // Nếu GET ok → push data hiện tại lên
     await gsSave();
     updateSyncStatus('ok', '✅ Đã kết nối Google Sheets');
     showToast('✅ Kết nối thành công! Data sẽ đồng bộ tự động.');
+    document.getElementById('gs-setup-box').classList.add('connected');
   } catch(e) {
-    updateSyncStatus('err', '❌ Lỗi: ' + e.message);
-    showToast('❌ Không kết nối được. Kiểm tra lại URL.');
+    updateSyncStatus('err', '❌ ' + e.message);
+    showToast('❌ Lỗi kết nối: ' + e.message);
   }
 }
 
 async function gsLoad() {
   if (!gsUrl) return;
-  const res = await fetch(gsUrl, { method: 'GET' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const text = await res.text();
-  const parsed = JSON.parse(text);
-  if (Array.isArray(parsed) && parsed.length > 0) {
-    // Merge với NUM_GROUPS
-    const saved = parsed;
-    if (saved.length !== NUM_GROUPS) {
-      groups = Array.from({length: NUM_GROUPS}, (_, i) => {
-        const old = saved.find(g => g.id === i + 1);
-        return old ? {...old, id: i + 1} : {id: i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]};
-      });
-    } else {
-      groups = saved;
-    }
-    // Cũng lưu local
+  const data = await jsonpFetch(gsUrl);
+  if (Array.isArray(data) && data.length > 0) {
+    const saved = data;
+    groups = saved.length !== NUM_GROUPS
+      ? Array.from({length: NUM_GROUPS}, (_, i) => saved.find(g => g.id === i+1) || {id:i+1, member1:'', member2:'', ptName:'', khName:'', uploads:[]})
+      : saved;
     localStorage.setItem(LS_KEY, JSON.stringify(groups));
     renderHome();
     renderAdmin();
     updateSyncStatus('ok', '✅ Đồng bộ lúc ' + timeNow());
+  } else {
+    // Sheet trống — push data local lên
+    updateSyncStatus('ok', '✅ Kết nối thành công (sheet trống)');
   }
 }
 
 async function gsSave() {
   if (!gsUrl) return;
-  const res = await fetch(gsUrl, {
-    method: 'POST',
-    body: JSON.stringify(groups),
-    headers: { 'Content-Type': 'text/plain' }
-  });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  localStorage.setItem(LS_KEY, JSON.stringify(groups));
-  updateSyncStatus('ok', '✅ Đã lưu lúc ' + timeNow());
+  // Dùng fetch với no-cors để POST — GAS nhận được dù không trả về response
+  try {
+    await fetch(gsUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(groups),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(groups));
+    updateSyncStatus('ok', '✅ Đã lưu lúc ' + timeNow());
+  } catch(e) {
+    // no-cors thường không throw, nếu throw thì báo lỗi
+    throw e;
+  }
 }
 
 function updateSyncStatus(state, msg) {
