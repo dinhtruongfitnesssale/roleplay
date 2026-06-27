@@ -959,12 +959,10 @@ function shuffleDeck() {
 // ═══════════════════════════════════════
 async function loadGroups() {
   try {
-    const r = await window.storage.get('groups-data');
-    if (r) {
-      const saved = JSON.parse(r.value);
-      // Migrate: nếu số nhóm khác NUM_GROUPS thì rebuild
+    const val = await storageGet('groups-data');
+    if (val) {
+      const saved = JSON.parse(val);
       if (saved.length !== NUM_GROUPS) {
-        // Giữ lại data các nhóm cũ nếu còn trong range
         groups = Array.from({length: NUM_GROUPS}, (_, i) => {
           const old = saved.find(g => g.id === i + 1);
           return old ? {...old, id: i + 1} : {
@@ -992,10 +990,26 @@ function initGroups() {
   }));
 }
 
-async function saveGroups() {
+// ── Storage: window.storage (Claude artifact) → localStorage fallback ──
+async function storageGet(key) {
   try {
-    await window.storage.set('groups-data', JSON.stringify(groups));
-  } catch(e) { console.error(e); }
+    if (window.storage) {
+      const r = await window.storage.get(key);
+      return r ? r.value : null;
+    }
+  } catch {}
+  return localStorage.getItem(key);
+}
+
+async function storageSet(key, val) {
+  try {
+    if (window.storage) await window.storage.set(key, val);
+  } catch {}
+  try { localStorage.setItem(key, val); } catch {}
+}
+
+async function saveGroups() {
+  await storageSet('groups-data', JSON.stringify(groups));
 }
 
 // ═══════════════════════════════════════
